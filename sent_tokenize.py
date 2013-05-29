@@ -48,7 +48,7 @@ def segment_sent(essay):
     abbrlist = load_file("abbr_list.txt")
     for line in essay:
         newline = []
-        line = re.sub(" +\.",".",line)
+        line = re.sub(r"( )+([\.,])",r"\2",line) # remove spaces before periods and commas
         revisedline = revise_line(newline,line)
         if len(revisedline) > 0:
             for word in revisedline:
@@ -63,9 +63,9 @@ def segment_sent(essay):
                     currentline.append(word)
                 if re.search("\.$",word):
                     if not (check_abbr(abbrlist,word) or check_abbr(abbrlist,word[:-1])): # the word is not in the abbreviation list with or without a final period
-                        if re.search("^[0-9]*\.?$", currentline[-1]) and len(currentline) > 1 and not re.search("(,$|^p(ag)?$)", currentline[-2]) and not (currentline[-1][:-1].isdigit() and currentline[-2].isdigit() and not (int(currentline[-1][:-1]) - int(currentline[-2]) > 1)):
-                            sentences.append(currentline[:-1]) #fix this
-                            currentline = currentline[-1]
+                        if re.search("^[0-9]*\.?$", currentline[-1]) and len(currentline) > 1 and not re.search("(,$|^p(ag)?$)", currentline[-2]) and not (currentline[-1][:-1].isdigit() and currentline[-2].isdigit() and not (int(currentline[-1][:-1]) - int(currentline[-2]) > 1)): # look for possible list markers
+                            sentences.append(currentline[:-1]) # append everything but the last word
+                            del currentline[:-1] # the last word starts the next sentence4
                         else:
                             sentences.append(currentline)
                             currentline = []
