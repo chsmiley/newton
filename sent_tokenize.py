@@ -65,16 +65,17 @@ def segment_sent(essay):
                     if not (check_abbr(abbrlist,word) or check_abbr(abbrlist,word[:-1])): # the word is not in the abbreviation list with or without a final period
                         if re.search("^[0-9]*\.?$", currentline[-1]) and len(currentline) > 1 and not re.search("(,$|^p(ag)?$)", currentline[-2]) and not (currentline[-1][:-1].isdigit() and currentline[-2].isdigit() and not (int(currentline[-1][:-1]) - int(currentline[-2]) > 1)): # look for possible list markers
                             sentences.append(currentline[:-1]) # append everything but the last word
-                            del currentline[:-1] # the last word starts the next sentence4
+                            del currentline[:-1] # the last word starts the next sentence
                         else:
                             sentences.append(currentline)
                             currentline = []
     return sentences
 
+# clean up issues from the first pass (segment_sent)
 def second_pass(sentences):
     new_sentences = []
     count = 0
-    for sentence in sentences:
+    for sentence in sentences: # don't allow sentences that begin with a lowercase word
         if not sentence[0].islower() or count == 0:
             new_sentences.append(sentence)
             count += 1
@@ -84,6 +85,7 @@ def second_pass(sentences):
 
     return new_sentences
 
+# write to output file
 def print_doc(filename,sentences):
     basefilename = filename.split(".")[0]
     ofile = open(basefilename + ".out",'w')
