@@ -63,9 +63,11 @@ def segment_sent(essay):
                     currentline.append(word)
                 if re.search("\.$",word):
                     if not (check_abbr(abbrlist,word) or check_abbr(abbrlist,word[:-1])): # the word is not in the abbreviation list with or without a final period
-                        if re.search("^[0-9]*\.?$", currentline[-1]) and len(currentline) > 1 and not re.search("(,$|^p(ag)?$)", currentline[-2]) and not (currentline[-1][:-1].isdigit() and currentline[-2].isdigit() and not (int(currentline[-1][:-1]) - int(currentline[-2]) > 1)): # look for possible list markers
+                        if re.search("^[0-9]{1,3}\.?$", currentline[-1]) and len(currentline) > 1 and not re.search("(,$|^p(ag)?$)", currentline[-2]) and not (currentline[-1][:-1].isdigit() and currentline[-2].isdigit() and not (int(currentline[-1][:-1]) - int(currentline[-2]) > 1)): # look for possible list markers, I'm assuming the list number marker won't go higher than 3 digits long (there's probably a better way to write this section)
                             sentences.append(currentline[:-1]) # append everything but the last word
                             del currentline[:-1] # the last word starts the next sentence
+                        elif len(currentline) == 1 and re.search("^[0-9]+\.?$",currentline[-1]): # just one number on a line
+                            pass
                         else:
                             sentences.append(currentline)
                             currentline = []
