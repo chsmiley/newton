@@ -1,7 +1,16 @@
 # This program tokenizes a file into sentences using an abbreviation list and a rule-based approach
 # Customized for the Isaac Newton corpus which contains a mixture of English, Latin, and Frech, many non-English abbreviations, and a number of irregularities
+# Call program from command line as follows: "python sent_tokenize.py dev" (This iterates over all files in dev directory) 
+# input (directory name), output (.seg files of the same name as the input file name)
+#
+# Known issues:
+# 1. Sentences ending in #. (e.g. 29.)ares assumed to be list markers (see segement_sent for a description of this algorithm).  This overgenerates (see ALCH00002-bare.seg)
+# 2. The word 'secret.' is in the abbreviation list and overgenerates. This may be true for other words.
+# 3. The abbreviation list should be expanded.
+# 4. Sentences with only sequences of numbers should be fixed (see ALCH00005-bare.seg) 
 
-import sys, re
+
+import sys, re, os
 
 detect_abbr = re.compile(r"((( |^)((([^\s]+\.|etc)( |$)+){2,}|([Pp](ag)?|[Cc]h(ap)?(t)?|[Tt]h|[Vv](ol)?|ib|et|in)\.?( |$)+)+(([0-9]+|[IVX]+)\.?,? *)*)+|i\. +e\.)") # any sequence of 2 or more words ending in a period or one of a short list of section abbreviaions (e.g. page, chapter, etc.) optionally followed by a number or Roman numeral  
 
@@ -46,6 +55,8 @@ def segment_sent(essay):
     currentline = []
     sentences = []
     abbrlist = load_file("abbr_list.txt")
+    #pagenum = re.compile(r"p(ag)?\.? +([0-9]+,? *)+\. *###")
+    pagenum = re.compile(r"p(ag)?.*")
     for line in essay:
         newline = []
         line = re.sub(r"( )+([\.,])",r"\2",line) # remove spaces before periods and commas
@@ -54,7 +65,7 @@ def segment_sent(essay):
             for word in revisedline:
                 word = word.strip()
                 if re.search("###$",word):
-                   if re.search("p(ag)?\.? +([0-9]+,? *)+\. *###",word): # look for page numbers and remove marker
+                   if pagenum.search(word): # look for page numbers and remove marker
                        word = word[:-3].strip()
                        currentline.append(word)
                    else: #other sequences of abbreviations
@@ -94,7 +105,7 @@ def second_pass(sentences):
 # write to output file
 def print_doc(filename,sentences):
     basefilename = filename.split(".")[0]
-    ofile = open(basefilename + ".out",'w')
+    ofile = open(basefilename + ".seg",'w')
 
     for sent in sentences:
          for i,word in enumerate(sent):
@@ -103,11 +114,35 @@ def print_doc(filename,sentences):
                 ofile.write(" ")
          ofile.write("\n\n")
 
+# iterate over all files in a directory if directory name is provide or use current directory if it is now
+def runallfiles(directory):
+    currentdir = os.getcwd()
+    runningdir = ""
+    filetype = re.compile(r"\.txt") # look for files with the extension .txt
+
+    if len(directory) == 1: # check whether a directory was named as the first argument, if not used the current directory
+        runningdir = currentdir
+    else: # use the directory name given
+        runningdir = currentdir + "/" + directory[1]
+
+    for filename in os.listdir(runningdir): # run the sentence segmenter over all of the files
+        if filetype.search(filename):
+            filename = runningdir + "/" + filename
+            essay = load_file(filename)
+            segmenteddoc = segment_sent(essay)
+            segmenteddoc = second_pass(segmenteddoc)
+            print_doc(filename,segmenteddoc)
+        
 def main():
-    essay = load_file(sys.argv[1])
-    segmenteddoc = segment_sent(essay)
-    segmenteddoc = second_pass(segmenteddoc)
-    print_doc(sys.argv[1],segmenteddoc)
+    # Comment out runallfiles and uncomment the last statements to run on only one file. This should be fixed later.
+    runallfiles(sys.argv)
+    
+
+    #filename = sys.argv[1]
+    #essay = load_file(filename)
+    #segmenteddoc = segment_sent(essay)
+    #segmenteddoc = second_pass(segmenteddoc)
+    #print_doc(filename,segmenteddoc)
 
 if __name__ == "__main__":
     main()
